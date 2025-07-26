@@ -24,7 +24,11 @@ class _SignInPageState extends State<SignInPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('Sign In'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Sign In'),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(

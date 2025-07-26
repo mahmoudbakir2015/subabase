@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:subabase/sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -12,8 +14,8 @@ class HomePage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              // عملية تسجيل الخروج
+            onPressed: () async {
+              signOut(context);
             },
           ),
         ],
@@ -96,5 +98,24 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  signOut(context) async {
+    final supabase = Supabase.instance.client;
+    await supabase.auth
+        .signOut()
+        .then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Signed out successfully')),
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const SignInPage()),
+          );
+        })
+        .catchError((error) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error signing out: $error')));
+        });
   }
 }
