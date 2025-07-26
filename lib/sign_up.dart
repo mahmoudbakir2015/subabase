@@ -1,5 +1,10 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:subabase/sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -105,11 +110,28 @@ class _SignUpPageState extends State<SignUpPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Signing Up...')),
-                    );
+                    signUpUser(
+                          email: _emailController.text.trim(),
+                          password: _passwordController.text.trim(),
+                          name: _nameController.text.trim(),
+                        )
+                        .then((value) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Sign Up Successful')),
+                          );
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (_) => const SignInPage(),
+                            ),
+                          );
+                        })
+                        .catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $error')),
+                          );
+                        });
                   }
                 },
                 child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
@@ -128,5 +150,29 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       ),
     );
+  }
+
+  Future<void> signUpUser({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    final supabase = Supabase.instance.client;
+    try {
+      final AuthResponse res = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        // لو عايز تبعت بيانات إضافية
+        data: {'name': name},
+      );
+
+      final User? user = res.user;
+
+      log('User ID: ${user?.id}');
+    } on AuthException catch (e) {
+      log('Error: ${e.message}');
+    } catch (e) {
+      log('Unexpected error: $e');
+    }
   }
 }
