@@ -1,5 +1,11 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:subabase/home.dart';
 import 'package:subabase/sign_up.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -86,10 +92,11 @@ class _SignInPageState extends State<SignInPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Signing In...')),
+                    signInUser(
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text.trim(),
                     );
                   }
                 },
@@ -109,5 +116,32 @@ class _SignInPageState extends State<SignInPage> {
         ),
       ),
     );
+  }
+
+  signInUser({required String email, required String password}) async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.auth
+          .signInWithPassword(email: email, password: password)
+          .then((onValue) {
+            if (onValue.session?.isExpired == true) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Session Expired')));
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Sign In Successful')));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomePage()),
+              );
+            }
+          });
+    } catch (error) {
+      log('Error signing in: $error');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error signing in: $error')));
+    }
   }
 }
