@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:subabase/sign_in.dart';
+import 'package:subabase/sign_up.dart';
 
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class SignInPage extends StatefulWidget {
+  const SignInPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  State<SignInPage> createState() => _SignInPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
+class _SignInPageState extends State<SignInPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
   bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('Sign Up'), centerTitle: true),
+      appBar: AppBar(title: const Text('Sign In'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -28,24 +26,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -108,20 +89,20 @@ class _SignUpPageState extends State<SignUpPage> {
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Signing Up...')),
+                      const SnackBar(content: Text('Signing In...')),
                     );
                   }
                 },
-                child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
+                child: const Text('Sign In', style: TextStyle(fontSize: 18)),
               ),
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
                   Navigator.of(
                     context,
-                  ).push(MaterialPageRoute(builder: (_) => const SignInPage()));
+                  ).push(MaterialPageRoute(builder: (_) => const SignUpPage()));
                 },
-                child: const Text("Already have an account? Log In"),
+                child: const Text("Don't have an account? Sign Up"),
               ),
             ],
           ),

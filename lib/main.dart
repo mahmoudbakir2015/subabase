@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:subabase/sign_up.dart';
+import 'package:subabase/sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const SignUpPage(),
+      home: const SignInPage(),
     );
   }
 }
