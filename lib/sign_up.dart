@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, body_might_complete_normally_catch_error, avoid_print
 
 import 'dart:developer';
 
@@ -113,25 +113,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     signUpUser(
-                          email: _emailController.text.trim(),
-                          password: _passwordController.text.trim(),
-                          name: _nameController.text.trim(),
-                        )
-                        .then((value) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Sign Up Successful')),
-                          );
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) => const SignInPage(),
-                            ),
-                          );
-                        })
-                        .catchError((error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $error')),
-                          );
-                        });
+                      email: _emailController.text.trim(),
+                      password: _passwordController.text.trim(),
+                      name: _nameController.text.trim(),
+                    );
                   }
                 },
                 child: const Text('Sign Up', style: TextStyle(fontSize: 18)),
@@ -159,12 +144,28 @@ class _SignUpPageState extends State<SignUpPage> {
   }) async {
     final supabase = Supabase.instance.client;
     try {
-      final AuthResponse res = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        // لو عايز تبعت بيانات إضافية
-        data: {'name': name},
-      );
+      final AuthResponse res = await supabase.auth
+          .signUp(
+            email: email,
+            password: password,
+            // لو عايز تبعت بيانات إضافية
+            data: {'name': name},
+          )
+          .then((value) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Sign Up Successful')));
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const SignInPage()),
+            );
+            return value;
+          })
+          .catchError((onError) {
+            log('Error signing up: $onError');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error signing up: $onError')),
+            );
+          });
 
       final User? user = res.user;
 
@@ -172,7 +173,7 @@ class _SignUpPageState extends State<SignUpPage> {
     } on AuthException catch (e) {
       log('Error: ${e.message}');
     } catch (e) {
-      log('Unexpected error: $e');
+      log('Unexpected error: ${e.toString()}');
     }
   }
 }
