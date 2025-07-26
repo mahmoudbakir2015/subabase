@@ -18,6 +18,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   bool _obscurePassword = true;
 
@@ -52,6 +53,21 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 20),
               TextFormField(
+                maxLength: 11,
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: const Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+                validator: egyptianPhoneValidator,
+              ),
+              const SizedBox(height: 20),
+
+              TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
@@ -70,6 +86,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 20),
               TextFormField(
                 controller: _passwordController,
@@ -116,6 +133,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       email: _emailController.text.trim(),
                       password: _passwordController.text.trim(),
                       name: _nameController.text.trim(),
+                      phone: _phoneController.text.trim(),
                     );
                   }
                 },
@@ -141,39 +159,80 @@ class _SignUpPageState extends State<SignUpPage> {
     required String email,
     required String password,
     required String name,
+    required String phone,
   }) async {
     final supabase = Supabase.instance.client;
+
     try {
-      final AuthResponse res = await supabase.auth
-          .signUp(
-            email: email,
-            password: password,
-            // لو عايز تبعت بيانات إضافية
-            data: {'name': name},
-          )
-          .then((value) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Sign Up Successful')));
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const SignInPage()),
-            );
-            return value;
-          })
-          .catchError((onError) {
-            log('Error signing up: $onError');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error signing up: $onError')),
-            );
-          });
+      // 1. تأكد إن الرقم مش موجود
+      final existingPhone = await supabase
+          .from('users')
+          .select('id')
+          .eq('phone', phone)
+          .maybeSingle();
 
-      final User? user = res.user;
+      if (existingPhone != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('هذا الرقم مستخدم بالفعل')),
+        );
+        return;
+      }
 
-      log('User ID: ${user?.id}');
+      // 2. اعمل تسجيل عادي
+      final AuthResponse res = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {'name': name, 'phone': phone},
+      );
+
+      final user = res.user;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('فشل التسجيل، حاول مرة أخرى')),
+        );
+        return;
+      }
+
+      // 3. أضف البيانات لجدول users
+      await supabase.from('users').insert({
+        'id': user.id,
+        'name': name,
+        'email': email,
+        'phone': phone,
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم إنشاء الحساب بنجاح')));
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const SignInPage()));
     } on AuthException catch (e) {
-      log('Error: ${e.message}');
+      log('Auth error: ${e.message}');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('خطأ: ${e.message}')));
     } catch (e) {
-      log('Unexpected error: ${e.toString()}');
+      log('Unexpected error: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unexpected error: $e')));
     }
+  }
+
+  String? egyptianPhoneValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+
+    // إزالة أي مسافات أو شرطات
+    value = value.replaceAll(RegExp(r'\s+|-'), '');
+
+    // التحقق من الرقم المصري
+    if (!RegExp(r'^(010|011|012|015)[0-9]{8}$').hasMatch(value)) {
+      return 'Enter a valid Egyptian phone number';
+    }
+
+    return null;
   }
 }
